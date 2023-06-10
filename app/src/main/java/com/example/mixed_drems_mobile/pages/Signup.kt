@@ -1,25 +1,26 @@
 package com.example.mixed_drems_mobile.pages
 
 import android.content.Context
-import android.content.Intent
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,10 +35,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import coil.compose.AsyncImage
 import com.example.mixed_drems_mobile.MainActivity
 import com.example.mixed_drems_mobile.api.auth.AuthServiceImpl
 import com.example.mixed_drems_mobile.api.auth.CustomerRegisterRequest
 import com.example.mixed_drems_mobile.api.auth.IAuthService
+import com.example.mixed_drems_mobile.api.products.Product
 import com.example.mixed_drems_mobile.navigation.Routes
 import com.example.mixed_drems_mobile.ui.theme.MixeddremsmobileTheme
 import kotlinx.coroutines.CoroutineScope
@@ -51,7 +54,6 @@ fun Signup(navController: NavHostController, activity: ComponentActivity) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
-
     val coroutineScope = rememberCoroutineScope()
 
     Surface(Modifier.fillMaxSize()) {
@@ -62,36 +64,36 @@ fun Signup(navController: NavHostController, activity: ComponentActivity) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            TextField(
+            OutlinedTextField(
                 value = firstName,
                 onValueChange = { firstName = it },
                 label = { Text("First Name") },
                 modifier = Modifier.fillMaxWidth()
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            TextField(
+            Spacer(modifier = Modifier.height(6.dp))
+            OutlinedTextField(
                 value = lastName,
                 onValueChange = { lastName = it },
                 label = { Text(text = "Last Name") },
                 modifier = Modifier.fillMaxWidth()
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            TextField(
+            Spacer(modifier = Modifier.height(6.dp))
+            OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
                 label = { Text(text = "Email") },
                 modifier = Modifier.fillMaxWidth()
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            TextField(
+            Spacer(modifier = Modifier.height(6.dp))
+            OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
                 label = { Text(text = "Password") },
                 visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth()
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            TextField(
+            Spacer(modifier = Modifier.height(6.dp))
+            OutlinedTextField(
                 value = confirmPassword,
                 onValueChange = { confirmPassword = it },
                 label = { Text(text = "Confirm Password") },
@@ -102,13 +104,22 @@ fun Signup(navController: NavHostController, activity: ComponentActivity) {
             Button(
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 onClick = {
-                    register(email, password, confirmPassword, firstName, lastName, coroutineScope, activity, navController)
+                    register(
+                        email,
+                        password,
+                        confirmPassword,
+                        firstName,
+                        lastName,
+                        coroutineScope,
+                        activity,
+                        navController
+                    )
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(text = "Signup")
             }
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(6.dp))
             Text(
                 text = "Already a user? Login",
                 color = MaterialTheme.colorScheme.primary,
@@ -137,11 +148,11 @@ private fun register(
     ) {
         if (password == confirmPassword) {
             scope.launch {
-                val authService: IAuthService = AuthServiceImpl()
+                val authService: IAuthService = AuthServiceImpl(context)
                 val data = CustomerRegisterRequest(firstName, lastName, email, password)
                 val result = authService.register(data)
                 if (result.isSuccess) {
-                    println("OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOKKKKKKKKKKKKKKKKKKKKKKKKKK")
+                    navController.navigate(Routes.Products.route)
                 } else {
                     Toast
                         .makeText(context, result.error?.title, Toast.LENGTH_SHORT)

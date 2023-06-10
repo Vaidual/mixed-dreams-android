@@ -3,6 +3,7 @@ package com.example.mixed_drems_mobile.api
 import com.example.mixed_drems_mobile.R
 import com.example.mixed_drems_mobile.models.ErrorResponse
 import com.example.mixed_drems_mobile.utils.MainApplication
+import com.example.mixed_drems_mobile.utils.SharedPreferencesHelper
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.conn.ssl.NoopHostnameVerifier
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.conn.ssl.SSLConnectionSocketFactory
 import com.google.firebase.crashlytics.buildtools.reloc.org.apache.http.conn.ssl.TrustSelfSignedStrategy
@@ -29,6 +30,7 @@ import io.ktor.client.request.request
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.client.statement.readText
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
@@ -80,7 +82,13 @@ object ApiClient {
         engine {
             sslManager = { httpsURLConnection ->
                 httpsURLConnection.sslSocketFactory =
-                    SSLContext.getInstance("TLS").apply {init(null, arrayOf(TrustAllX509TrustManager()), SecureRandom())}.socketFactory
+                    SSLContext.getInstance("TLS").apply {
+                        init(
+                            null,
+                            arrayOf(TrustAllX509TrustManager()),
+                            SecureRandom()
+                        )
+                    }.socketFactory
                 httpsURLConnection.hostnameVerifier = HostnameVerifier { _, _ -> true }
             }
         }
@@ -108,6 +116,7 @@ object ApiClient {
     }
 }
 
+
 class ApiResponse<T>(
     val isSuccess: Boolean,
     val data: T?,
@@ -124,10 +133,25 @@ suspend inline fun <reified T : Any> HttpClient.postWithApiResponse(
         if (response.status.isSuccess()) {
             ApiResponse(isSuccess = true, data = response.body<T>(), error = null)
         } else {
+            if (response.status == HttpStatusCode.Unauthorized) {
+                SharedPreferencesHelper.removeTokens()
+            }
             ApiResponse(isSuccess = false, data = null, error = response.body<ErrorResponse>())
         }
-    }  catch (exception: Exception) {
+    } catch (exception: ResponseException) {
+
         println(exception.message)
-        ApiResponse(isSuccess = false, data = null, error = ErrorResponse(exception.message ?: "Unknown error", 500, 1))
+        ApiResponse(
+            isSuccess = false,
+            data = null,
+            error = ErrorResponse(exception.message ?: "Unknown error", 500, 1)
+        )
+    } catch (exception: Exception) {
+        println(exception.message)
+        ApiResponse(
+            isSuccess = false,
+            data = null,
+            error = ErrorResponse(exception.message ?: "Unknown error", 500, 1)
+        )
     }
 }

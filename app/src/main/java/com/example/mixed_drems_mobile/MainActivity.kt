@@ -1,6 +1,5 @@
 package com.example.mixed_drems_mobile
 
-import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -14,14 +13,14 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.mixed_drems_mobile.navigation.Routes
 import com.example.mixed_drems_mobile.pages.Login
+import com.example.mixed_drems_mobile.pages.products.ProductsPage
 import com.example.mixed_drems_mobile.pages.Signup
 import com.example.mixed_drems_mobile.ui.theme.MixeddremsmobileTheme
+import com.example.mixed_drems_mobile.utils.SharedPreferencesHelper
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val loginIntent = Intent(this, LoginActivity::class.java)
-        startActivity(loginIntent)
         setContent {
             MixeddremsmobileTheme {
                 // A surface container using the 'background' color from the theme
@@ -40,12 +39,18 @@ class MainActivity : ComponentActivity() {
 fun Navigator(activity: ComponentActivity) {
     val navController = rememberNavController()
 
-    NavHost(navController = navController, startDestination = Routes.Login.route) {
+    NavHost(
+        navController = navController,
+        startDestination = if (SharedPreferencesHelper.getAccessToken(activity) == null) Routes.Login.route else Routes.Products.route
+    ) {
         composable(Routes.Login.route) {
             Login(navController = navController, activity)
         }
         composable(Routes.Signup.route) {
             Signup(navController = navController, activity)
+        }
+        composable(Routes.Products.route) {
+            ProductsPage(navController = navController, activity)
         }
     }
 }

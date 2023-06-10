@@ -1,4 +1,4 @@
-package com.example.mixed_drems_mobile.models
+package com.example.mixed_drems_mobile.api.products
 
 import com.google.gson.annotations.SerializedName
 import kotlinx.serialization.Serializable
@@ -12,10 +12,10 @@ data class Product(
     val name: String,
 
     @field:SerializedName("description")
-    val description: String,
+    val description: String?,
 
     @field:SerializedName("price")
-    val price: Float,
+    val price: Float?,
 
     @field:SerializedName("primaryImage")
     val primaryImage: String?,
