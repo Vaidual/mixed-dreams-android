@@ -27,9 +27,9 @@ class ProductsServiceImpl(
                 takeFrom(ApiRoutes.Products)
                 if (page != null) parameters.append("page", page.toString())
                 if (size != null) parameters.append("size", size.toString())
-                if (key != null) parameters.append("key", key.toString())
-                if (category != null) parameters.append("category", category.toString())
-
+                if (key != null) parameters.append("key", key)
+                if (category != null) parameters.append("category", category)
+                if (sort != null) parameters.append("sort", sort)
             }
             method = HttpMethod.Get
             headers {

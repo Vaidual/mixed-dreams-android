@@ -1,8 +1,7 @@
-package com.example.mixed_drems_mobile.pages
+package com.example.mixed_drems_mobile.pages.auth.login
 
 import android.content.Context
 import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer

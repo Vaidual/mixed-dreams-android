@@ -23,17 +23,20 @@ class ProductsPagingSource(
             val page = params.key ?: 0
             val response = productsService.getProducts(
                 page = page,
+                size = params.loadSize,
                 category = pagingParams.category,
                 key = pagingParams.key,
-                size = pageSize,
                 sort = pagingParams.sort,
             )
             if (response.isSuccess) {
+                println("${page + 1}, $pageSize, ${pageSize * 2}")
+                println(((page + 1) * pageSize) + pageSize * 2)
+                println(params.loadSize)
                 LoadResult.Page(
                     data = response.data!!.products,
                     prevKey = if (page == 0) null else page.minus(1),
                     nextKey =
-                    if (((page + 1) * pageSize) + pageSize * 2 >= response.data.totalCount)
+                    if (((page + 1) * pageSize) + params.loadSize - pageSize >= response.data.totalCount)
                         null
                     else
                         page + (params.loadSize / pageSize),

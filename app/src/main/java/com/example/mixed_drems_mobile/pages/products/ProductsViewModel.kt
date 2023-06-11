@@ -15,53 +15,52 @@ import com.example.mixed_drems_mobile.paging.ProductsPagingSource
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.stateIn
 
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 class ProductsViewModel(
     productsService: IProductsService,
-//    private val pagingParams: ProductPaginationParams,
+    defaultFilterParams: ProductFilterParams,
 
 ) : ViewModel() {
 
     private val pageSize = 10
 
-    private val pagingParams = MutableLiveData(
-        ProductFilterParams(
-            null,
-            null,
-            null
+    private val _pagingParams = MutableStateFlow(
+        defaultFilterParams
+    )
+
+    private val pagingParams = _pagingParams.asStateFlow()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(),
+            initialValue = defaultFilterParams,
         )
-    )
 
-    private val pagingConfig = PagingConfig(
-        pageSize = pageSize, // Number of items loaded per page
-        enablePlaceholders = false // Whether to show placeholders for unloaded items
-    )
-
-    private val pagingSource = ProductsPagingSource(productsService, pagingParams.value!!, pageSize)
-
-    private val pager = Pager(config = pagingConfig) {
-        pagingSource
-    }
-
-    val productsFlow: Flow<PagingData<Product>> = pagingParams.asFlow()
+    val productsFlow: Flow<PagingData<Product>> = pagingParams
         .debounce(500)
         .flatMapLatest {
-            Pager(config = pagingConfig) {
-                pagingSource
-            }.flow
+            Pager(
+                PagingConfig(
+                    pageSize = pageSize,
+                    enablePlaceholders = false,
+                )
+            ) {
+                ProductsPagingSource(productsService, pagingParams.value, pageSize)
+            }.flow.cachedIn(viewModelScope)
         }
-        .cachedIn(viewModelScope)
 
     fun updateFilter(filter: ProductFilterParams) {
-        if (filter == this.pagingParams.value) return
-        this.pagingParams.value = filter
-        println(this.pagingParams.value)
+        if (filter == this._pagingParams.value) return
+        this._pagingParams.value = filter
     }
 
     fun getFilter(): ProductFilterParams {
-        return this.pagingParams.value!!
+        return this._pagingParams.value
     }
 }
