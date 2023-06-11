@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material.BottomNavigation
 import androidx.compose.material.BottomNavigationItem
 import androidx.compose.material.Icon
@@ -30,8 +31,8 @@ import com.example.mixed_drems_mobile.pages.account.AccountPage
 import com.example.mixed_drems_mobile.pages.auth.login.Login
 import com.example.mixed_drems_mobile.pages.auth.signup.Signup
 import com.example.mixed_drems_mobile.pages.orders.OrdersPage
+import com.example.mixed_drems_mobile.pages.product.ProductPage
 import com.example.mixed_drems_mobile.pages.products.ProductsPage
-import com.example.mixed_drems_mobile.ui.theme.MixeddremsmobileTheme
 import com.example.mixed_drems_mobile.utils.SharedPreferencesHelper
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -42,7 +43,8 @@ fun MainPage(
     val navController = rememberNavController()
 
     Scaffold(
-        bottomBar = { BottomBar(navController) }
+        bottomBar = { BottomBar(navController) },
+        //modifier =  Modifier.safeDrawingPadding(),
     ) { paddingValues ->
         Box(
             modifier = Modifier
@@ -80,11 +82,17 @@ fun Navigator(activity: ComponentActivity, navController: NavHostController) {
         composable(Routes.Products.route) {
             ProductsPage(navController = navController)
         }
-        composable(route = BottomBarOption.Orders.route) {
+        composable(route = Routes.Orders.route) {
             OrdersPage(navController = navController)
         }
-        composable(route = BottomBarOption.Account.route) {
+        composable(route = Routes.Account.route) {
             AccountPage(navController = navController)
+        }
+        composable(route = Routes.Product.route) { backStackEntry ->
+            ProductPage(
+                navigateBack = { navController.navigateUp() },
+                backStackEntry.arguments?.getString("productId")!!
+            )
         }
     }
 }

@@ -9,7 +9,9 @@ import androidx.paging.cachedIn
 import com.example.mixed_drems_mobile.api.products.IProductsService
 import com.example.mixed_drems_mobile.api.products.Product
 import com.example.mixed_drems_mobile.api.products.getProducts.ProductFilterParams
+import com.example.mixed_drems_mobile.constants.ProductSort
 import com.example.mixed_drems_mobile.paging.ProductsPagingSource
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
@@ -19,13 +21,19 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
+import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
-class ProductsViewModel(
-    productsService: IProductsService,
-    defaultFilterParams: ProductFilterParams,
-
+@HiltViewModel
+class ProductsViewModel @Inject constructor(
+    private val productsService: IProductsService,
 ) : ViewModel() {
+
+    val defaultFilterParams = ProductFilterParams(
+        "",
+        null,
+        ProductSort.New
+    )
 
     private val pageSize = 10
 

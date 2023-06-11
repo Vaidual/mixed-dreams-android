@@ -6,13 +6,16 @@ import com.example.mixed_drems_mobile.api.ApiResponse
 import com.example.mixed_drems_mobile.api.ApiRoutes
 import com.example.mixed_drems_mobile.api.postWithApiResponse
 import com.example.mixed_drems_mobile.api.products.getProducts.GetProductsResponse
+import com.example.mixed_drems_mobile.utils.MainApplication
 import com.example.mixed_drems_mobile.utils.SharedPreferencesHelper
 import io.ktor.client.request.headers
 import io.ktor.http.HttpMethod
 import io.ktor.http.takeFrom
+import javax.inject.Singleton
 
+@Singleton
 class ProductsServiceImpl(
-    private val context: Context
+
 ) : IProductsService {
     override suspend fun getProducts(
         page: Int?,
@@ -33,7 +36,7 @@ class ProductsServiceImpl(
             }
             method = HttpMethod.Get
             headers {
-                append("Authorization", "Bearer ${SharedPreferencesHelper.getAccessToken(context)}")
+                append("Authorization", "Bearer ${SharedPreferencesHelper.getAccessToken(MainApplication.instance.applicationContext)}")
             }
         }
     }

@@ -1,6 +1,5 @@
 package com.example.mixed_drems_mobile.pages.products
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -10,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -17,11 +17,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -43,10 +47,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -57,9 +60,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.Center
 import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
@@ -67,6 +71,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
@@ -75,9 +80,8 @@ import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
 import coil.compose.AsyncImage
 import com.example.mixed_drems_mobile.api.products.Product
-import com.example.mixed_drems_mobile.api.products.ProductsServiceImpl
-import com.example.mixed_drems_mobile.api.products.getProducts.ProductFilterParams
 import com.example.mixed_drems_mobile.constants.ProductSort
+import com.example.mixed_drems_mobile.navigation.Routes
 import com.example.mixed_drems_mobile.ui.theme.MixeddremsmobileTheme
 import kotlinx.coroutines.launch
 
@@ -85,10 +89,7 @@ import kotlinx.coroutines.launch
     ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class
 )
 @Composable
-fun ProductsPage(navController: NavHostController) {
-
-    val productsService = ProductsServiceImpl(LocalContext.current)
-
+fun ProductsPage(navController: NavHostController, vm: ProductsViewModel = hiltViewModel()) {
     data class SortOption(val label: String, val key: String)
 
     val sortOptions = listOf(
@@ -97,20 +98,14 @@ fun ProductsPage(navController: NavHostController) {
         SortOption("Most New", ProductSort.New)
     )
 
-    val defaultSort = sortOptions[2]
-    val defaultFilterParams = ProductFilterParams(
-        null,
-        null,
-        defaultSort.key
-    )
+    val defaultSort = sortOptions.first { o -> o.key == vm.getFilter().sort }
 
-    val vm = ProductsViewModel(productsService, defaultFilterParams)
     val products: LazyPagingItems<Product> = vm.productsFlow.collectAsLazyPagingItems()
 
     var currentSort by remember { mutableStateOf(defaultSort.label) }
 
     var openSortSheet by rememberSaveable { mutableStateOf(false) }
-    var skipPartiallyExpanded by remember { mutableStateOf(false) }
+    val skipPartiallyExpanded by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val bottomSheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = skipPartiallyExpanded
@@ -124,6 +119,12 @@ fun ProductsPage(navController: NavHostController) {
 
     var openSearchBar by rememberSaveable { mutableStateOf(false) }
     var query by rememberSaveable { mutableStateOf("") }
+    val focusRequester = remember { FocusRequester() }
+    LaunchedEffect(openSearchBar) {
+        if (openSearchBar) {
+            focusRequester.requestFocus()
+        }
+    }
 
     fun updateSearchKey(key: String) {
         vm.updateFilter(vm.getFilter().copy(key = key))
@@ -134,65 +135,70 @@ fun ProductsPage(navController: NavHostController) {
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable {
-                        if (!openSearchBar)
-                            openSearchBar = true
-                    },
-                color = MaterialTheme.colorScheme.background,
             ) {
-                TextField(
-                    enabled = openSearchBar,
-                    value = query,
-                    onValueChange = {
-                        query = it
-                    },
-                    placeholder = {
-                        Text(
-                            text = "Serch for product name",
+                Row(
+                    Modifier
+                        .padding(6.dp)
+                        .border(
+                            width = 1.dp,
+                            color = Color.LightGray,
+                            shape = RoundedCornerShape(10.dp)
                         )
-                    },
-//                    textStyle = TextStyle(
-//                        fontSize = 16.sp
-//                    ),
-                    singleLine = true,
-                    trailingIcon = {
-                        if (openSearchBar)
-                            IconButton(onClick = {
-                                updateSearchKey("")
-                                query = ""
-                                openSearchBar = false
-                            }) {
-                                Icon(
-                                    imageVector = Icons.Filled.Close,
-                                    contentDescription = "Clear search icon",
-                                )
+                        .clickable {
+                            if (!openSearchBar) {
+                                openSearchBar = true
                             }
-                        else
-                            Icon(
-                                imageVector = Icons.Default.Search,
-                                contentDescription = "Search Icon"
+                        },
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box {
+                        if (query == "") {
+                            Text(
+                                modifier = Modifier
+                                    .padding(10.dp),
+                                text = "Search for product here",
+                                color = Color.Gray
                             )
-                    },
-                    keyboardOptions = KeyboardOptions(
-                        imeAction = ImeAction.Search
-                    ),
-                    keyboardActions = KeyboardActions(
-                        onSearch = {
-                            updateSearchKey(query)
-                            openSearchBar = false
                         }
-                    ),
-                    colors = TextFieldDefaults.colors(
-
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        disabledIndicatorColor = Color.Transparent,
-                    ),
-                    modifier = Modifier
-                        .background(color = MaterialTheme.colorScheme.background)
-                        .border(width = 1.dp, color = Color.Black, shape = RoundedCornerShape(8.dp))
-                        .padding(0.dp)
-                )
+                        BasicTextField(
+                            textStyle = MaterialTheme.typography.bodyMedium,
+                            enabled = openSearchBar,
+                            value = query,
+                            onValueChange = {
+                                query = it
+                            },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(
+                                imeAction = ImeAction.Search
+                            ),
+                            keyboardActions = KeyboardActions(
+                                onSearch = {
+                                    updateSearchKey(query)
+                                    openSearchBar = false
+                                }
+                            ),
+                            modifier = Modifier
+                                .padding(10.dp)
+                                .focusRequester(focusRequester),
+                        )
+                    }
+                    Spacer(Modifier.weight(1f))
+                    if (openSearchBar)
+                        IconButton(onClick = {
+                            query = ""
+                        }) {
+                            Icon(
+                                imageVector = Icons.Filled.Close,
+                                contentDescription = "Clear search icon",
+                            )
+                        }
+                    else
+                        Icon(
+                            modifier = Modifier.padding(12.dp),
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "Search Icon"
+                        )
+                }
             }
         }
     ) { paddingValues ->
@@ -206,7 +212,6 @@ fun ProductsPage(navController: NavHostController) {
                     modifier = Modifier
                         .background(MaterialTheme.colorScheme.background)
                         .fillMaxWidth()
-                        .padding(10.dp)
                 ) {
                     Row(
                         horizontalArrangement = Arrangement.Start
@@ -220,11 +225,10 @@ fun ProductsPage(navController: NavHostController) {
                         }
                     }
                 }
-                Spacer(modifier = Modifier.height(4.dp))
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(16.dp),
+                        .padding(horizontal = 16.dp),
                     horizontalAlignment = CenterHorizontally,
                 ) {
                     if (products.loadState.refresh == LoadState.Loading) {
@@ -237,19 +241,21 @@ fun ProductsPage(navController: NavHostController) {
                                 )
                             }
                         }
-                    }
-                    items(
-                        count = products.itemCount,
-                        key = products.itemKey(),
-                        contentType = products.itemContentType(
-                        )
-                    ) { index ->
-                        val item = products[index]
-                        if (item != null) {
-                            ProductCard(item)
+                    } else {
+                        items(
+                            count = products.itemCount,
+                            key = products.itemKey(),
+                            contentType = products.itemContentType(
+                            )
+                        ) { index ->
+                            val item = products[index]
+                            if (item != null) {
+                                ProductCard(item, navController)
+                            }
+                            Spacer(modifier = Modifier.height(16.dp))
                         }
-                        Spacer(modifier = Modifier.height(16.dp))
                     }
+
                     if (products.loadState.append == LoadState.Loading) {
                         item {
                             CircularProgressIndicator(
@@ -340,11 +346,14 @@ fun ProductsPage(navController: NavHostController) {
 
 
 @Composable
-fun ProductCard(product: Product) {
+fun ProductCard(product: Product, navController: NavHostController) {
     Card(
         modifier = Modifier
             .widthIn(0.dp, 300.dp)
-            .height(210.dp),
+            .height(210.dp)
+            .clickable{
+                navController.navigate(Routes.Product.createRoute(product.id))
+            },
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Column {
@@ -403,22 +412,6 @@ fun onAddToCartClicked(id: String) {
 
 //@Preview(showBackground = true)
 @Composable
-fun LoginPreview() {
-    MixeddremsmobileTheme {
-        ProductCard(
-            Product(
-                "w",
-                "Ricotto",
-                "",
-                120.0f,
-                null
-            )
-        )
-    }
-}
-
-//@Preview(showBackground = true)
-@Composable
 fun LazyColumnPreview() {
     MixeddremsmobileTheme {
         LazyColumn(
@@ -449,53 +442,52 @@ fun LazyColumnPreview() {
 @Composable
 fun Test() {
     MixeddremsmobileTheme {
-        TextField(
-            enabled = true,
-            value = "ewfewf",
-            onValueChange = {
-
-            },
-            placeholder = {
+        Row(
+            Modifier
+                .padding(6.dp)
+                .border(width = 1.dp, color = Color.Black, shape = RoundedCornerShape(10.dp)),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+            ) {
                 Text(
-                    text = "Serch for product name",
+                    modifier = Modifier
+                        .padding(10.dp),
+                    text = "",
+                    color = Color.Gray
                 )
-            },
-//                    textStyle = TextStyle(
-//                        fontSize = 16.sp
-//                    ),
-            singleLine = true,
-            trailingIcon = {
-                if (true)
-                    IconButton(onClick = {}) {
-                        Icon(
-                            imageVector = Icons.Filled.Close,
-                            contentDescription = "Clear search icon",
-                        )
-                    }
-                else
+                BasicTextField(
+                    textStyle = MaterialTheme.typography.bodyMedium,
+                    enabled = true,
+                    value = "eefef",
+                    onValueChange = {
+
+                    },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(
+                        imeAction = ImeAction.Search
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onSearch = {
+
+                        }
+                    ),
+                    modifier = Modifier
+                        .padding(10.dp)
+                )
+            }
+            if (true)
+                IconButton(onClick = {}) {
                     Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = "Search Icon"
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = "Clear search icon",
                     )
-            },
-            keyboardOptions = KeyboardOptions(
-                imeAction = ImeAction.Search
-            ),
-            keyboardActions = KeyboardActions(
-                onSearch = {
-
                 }
-            ),
-            colors = TextFieldDefaults.colors(
-
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent,
-                disabledIndicatorColor = Color.Transparent,
-            ),
-            modifier = Modifier
-                .background(color = MaterialTheme.colorScheme.background)
-                .border(width = 1.dp, color = Color.Black, shape = RoundedCornerShape(8.dp))
-                .padding(0.dp)
-        )
+            else
+                Icon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = "Search Icon"
+                )
+        }
     }
 }
