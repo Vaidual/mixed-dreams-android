@@ -29,9 +29,6 @@ class ProductsPagingSource(
                 sort = pagingParams.sort,
             )
             if (response.isSuccess) {
-                println("${page + 1}, $pageSize, ${pageSize * 2}")
-                println(((page + 1) * pageSize) + pageSize * 2)
-                println(params.loadSize)
                 LoadResult.Page(
                     data = response.data!!.products,
                     prevKey = if (page == 0) null else page.minus(1),

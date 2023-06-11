@@ -1,6 +1,5 @@
 package com.example.mixed_drems_mobile.pages.products
 
-import androidx.activity.ComponentActivity
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -46,8 +45,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -60,7 +57,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.Center
 import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -86,48 +82,12 @@ import com.example.mixed_drems_mobile.ui.theme.MixeddremsmobileTheme
 import kotlinx.coroutines.launch
 
 @OptIn(
-    ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class,
-    ExperimentalFoundationApi::class
+    ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class
 )
 @Composable
 fun ProductsPage(navController: NavHostController) {
 
     val productsService = ProductsServiceImpl(LocalContext.current)
-//    val pageSize = 10;
-//
-//    var pagingParams by remember {
-//        mutableStateOf(
-//            ProductFilterParams(
-//                null,
-//                null,
-//                null
-//            )
-//        )
-//    }
-//
-//    val pagingConfig = PagingConfig(
-//        pageSize = pageSize, // Number of items loaded per page
-//        enablePlaceholders = false // Whether to show placeholders for unloaded items
-//    )
-//
-//    val pagingSource = ProductsPagingSource(productsService, pagingParams, pageSize)
-//
-//    val pager = Pager(config = pagingConfig) {
-//        pagingSource
-//    }
-//
-//    val products = pager.flow.collectAsLazyPagingItems()
-//
-//    LaunchedEffect(products) {
-//        // Coroutine scope for the effect
-//        try {
-//            // Start collecting the flow
-//            products.refresh()
-//        } catch (e: Exception) {
-//            // Handle any exceptions
-//            // Log or display an error message
-//        }
-//    }
 
     data class SortOption(val label: String, val key: String)
 
@@ -160,8 +120,6 @@ fun ProductsPage(navController: NavHostController) {
         vm.updateFilter(vm.getFilter().copy(sort = option.key))
         currentSort = option.label
         openSortSheet = false
-//        pagingParams = ProductFilterParams(sortField, null, null)
-//        products.refresh()
     }
 
     var openSearchBar by rememberSaveable { mutableStateOf(false) }
@@ -170,8 +128,6 @@ fun ProductsPage(navController: NavHostController) {
     fun updateSearchKey(key: String) {
         vm.updateFilter(vm.getFilter().copy(key = key))
     }
-
-    products.loadState.source
 
     Scaffold(
         topBar = {
@@ -238,27 +194,6 @@ fun ProductsPage(navController: NavHostController) {
                         .padding(0.dp)
                 )
             }
-//                TopAppBar(
-//                    title = {
-//                        Text(
-//                            modifier = Modifier.fillMaxWidth(),
-//                            textAlign = TextAlign.Center,
-//                            fontWeight = FontWeight.SemiBold,
-//                            text = "Products",
-//                        )
-//                    },
-//                    colors = TopAppBarDefaults.topAppBarColors(MaterialTheme.colorScheme.background),
-//                    actions = {
-//                        IconButton(onClick = {
-//                            openSearchBar = true
-//                        }) {
-//                            Icon(
-//                                imageVector = Icons.Default.Search,
-//                                contentDescription = "Search Icon"
-//                            )
-//                        }
-//                    }
-//                )
         }
     ) { paddingValues ->
         Box(
@@ -292,26 +227,6 @@ fun ProductsPage(navController: NavHostController) {
                         .padding(16.dp),
                     horizontalAlignment = CenterHorizontally,
                 ) {
-                    //                stickyHeader {
-                    //                    Box(
-                    //                        modifier = Modifier
-                    //                            .background(MaterialTheme.colorScheme.background)
-                    //                            .fillMaxWidth()
-                    //                    ) {
-                    //                        Row(
-                    //                            horizontalArrangement = Arrangement.Start
-                    //                        ) {
-                    //                            TextButton(onClick = { openSortSheet = !openSortSheet }) {
-                    //                                Icon(
-                    //                                    imageVector = Icons.Rounded.Sort,
-                    //                                    contentDescription = "Sort Icon",
-                    //                                )
-                    //                                Text(text = currentSort)
-                    //                            }
-                    //                        }
-                    //                    }
-                    //                    Spacer(modifier = Modifier.height(4.dp))
-                    //                }
                     if (products.loadState.refresh == LoadState.Loading) {
                         item {
                             Box(
@@ -432,9 +347,7 @@ fun ProductCard(product: Product) {
             .height(210.dp),
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
-        Column(
-
-        ) {
+        Column {
             if (product.primaryImage != null) AsyncImage(
                 model = product.primaryImage,
                 contentDescription = "Image of product",
@@ -513,7 +426,7 @@ fun LazyColumnPreview() {
                 .fillMaxSize()
                 .padding(16.dp)
                 .wrapContentHeight(),
-            horizontalAlignment = Alignment.CenterHorizontally,
+            horizontalAlignment = CenterHorizontally,
         ) {
             item {
                 Box(
@@ -536,24 +449,53 @@ fun LazyColumnPreview() {
 @Composable
 fun Test() {
     MixeddremsmobileTheme {
-        TopAppBar(
-            title = {
+        TextField(
+            enabled = true,
+            value = "ewfewf",
+            onValueChange = {
+
+            },
+            placeholder = {
                 Text(
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center,
-                    fontWeight = FontWeight.SemiBold,
-                    text = "Home",
+                    text = "Serch for product name",
                 )
             },
-            colors = TopAppBarDefaults.topAppBarColors(MaterialTheme.colorScheme.background),
-            actions = {
-                IconButton(onClick = {}) {
+//                    textStyle = TextStyle(
+//                        fontSize = 16.sp
+//                    ),
+            singleLine = true,
+            trailingIcon = {
+                if (true)
+                    IconButton(onClick = {}) {
+                        Icon(
+                            imageVector = Icons.Filled.Close,
+                            contentDescription = "Clear search icon",
+                        )
+                    }
+                else
                     Icon(
                         imageVector = Icons.Default.Search,
                         contentDescription = "Search Icon"
                     )
+            },
+            keyboardOptions = KeyboardOptions(
+                imeAction = ImeAction.Search
+            ),
+            keyboardActions = KeyboardActions(
+                onSearch = {
+
                 }
-            }
+            ),
+            colors = TextFieldDefaults.colors(
+
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+                disabledIndicatorColor = Color.Transparent,
+            ),
+            modifier = Modifier
+                .background(color = MaterialTheme.colorScheme.background)
+                .border(width = 1.dp, color = Color.Black, shape = RoundedCornerShape(8.dp))
+                .padding(0.dp)
         )
     }
 }

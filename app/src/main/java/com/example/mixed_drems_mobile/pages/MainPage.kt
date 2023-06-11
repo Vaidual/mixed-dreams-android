@@ -2,25 +2,23 @@ package com.example.mixed_drems_mobile.pages
 
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.consumeWindowInsets
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.BottomNavigation
 import androidx.compose.material.BottomNavigationItem
-import androidx.compose.material3.Icon
+import androidx.compose.material.Icon
+import androidx.compose.material.LocalContentColor
+import androidx.compose.material.Scaffold
+import androidx.compose.material.Text
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -43,19 +41,17 @@ fun MainPage(
 ) {
     val navController = rememberNavController()
 
-    MixeddremsmobileTheme {
-        Scaffold(
-            bottomBar = { BottomBar(navController) }
-        ) { paddingValues ->
-            Box(
-                modifier = Modifier
-                    .padding(paddingValues)
-                    .consumeWindowInsets(paddingValues)
-            ) {
-                Navigator(activity = activity, navController = navController)
-            }
+    Scaffold(
+        bottomBar = { BottomBar(navController) }
+    ) { paddingValues ->
+        Box(
+            modifier = Modifier
+                .padding(paddingValues)
+                .consumeWindowInsets(paddingValues)
+        ) {
+            Navigator(activity = activity, navController = navController)
         }
-        // A surface container using the 'background' color from the theme
+    }
 //        Surface(
 //            modifier = Modifier.fillMaxSize(),
 //            color = MaterialTheme.colorScheme.background
@@ -67,7 +63,6 @@ fun MainPage(
 //                BottomBar(navController)
 //            }
 //        }
-    }
 }
 
 @Composable
@@ -106,7 +101,7 @@ fun BottomBar(navController: NavHostController) {
 
     BottomNavigation(
         backgroundColor = MaterialTheme.colorScheme.secondary
-            ) {
+    ) {
         screens.forEach { screen ->
             AddItem(
                 screen = screen,
@@ -121,7 +116,7 @@ fun BottomBar(navController: NavHostController) {
 fun RowScope.AddItem(
     screen: BottomBarOption,
     currentDestination: NavDestination?,
-    navController: NavHostController
+    navController: NavHostController,
 ) {
     BottomNavigationItem(
         label = { Text(text = screen.title) },
@@ -135,7 +130,11 @@ fun RowScope.AddItem(
             it.route == screen.route
         } == true,
         onClick = {
-            navController.navigate(screen.route)
-        }
+            navController.navigate(screen.route) {
+                popUpTo(navController.graph.findStartDestination().id)
+                launchSingleTop = true
+            }
+        },
+        unselectedContentColor = LocalContentColor.current.copy(alpha = 0.5f)
     )
 }
