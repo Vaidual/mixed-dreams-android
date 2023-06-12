@@ -8,5 +8,8 @@ data class GetProductDetailsResponse(
     val name: String,
     val description: String,
     val price: Double,
-    val primaryImage: String,
+    val primaryImage: String?,
+    val category: String,
+    val company: ProductCompanyDto,
+    val ingredients: List<IngredientDto>
 )

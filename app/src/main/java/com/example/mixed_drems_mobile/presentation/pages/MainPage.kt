@@ -34,6 +34,12 @@ import com.example.mixed_drems_mobile.presentation.pages.product.ProductDetailsP
 import com.example.mixed_drems_mobile.presentation.pages.products.ProductsPage
 import com.example.mixed_drems_mobile.utils.SharedPreferencesHelper
 
+val bottomNavScreens = listOf(
+    BottomBarOption.Home,
+    BottomBarOption.Orders,
+    BottomBarOption.Account,
+)
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun MainPage(
@@ -42,7 +48,9 @@ fun MainPage(
     val navController = rememberNavController()
 
     Scaffold(
-        bottomBar = { BottomBar(navController) },
+        bottomBar = { if (bottomNavScreens.any{ it.route == navController.currentBackStackEntryAsState().value?.destination?.route}){
+            BottomBar(navController)
+        } },
         //modifier =  Modifier.safeDrawingPadding(),
     ) { paddingValues ->
         Box(
@@ -97,18 +105,14 @@ fun Navigator(activity: ComponentActivity, navController: NavHostController) {
 
 @Composable
 fun BottomBar(navController: NavHostController) {
-    val screens = listOf(
-        BottomBarOption.Home,
-        BottomBarOption.Orders,
-        BottomBarOption.Account,
-    )
+
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
 
     BottomNavigation(
         backgroundColor = MaterialTheme.colorScheme.secondary
     ) {
-        screens.forEach { screen ->
+        bottomNavScreens.forEach { screen ->
             AddItem(
                 screen = screen,
                 currentDestination = currentDestination,
