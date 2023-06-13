@@ -1,6 +1,5 @@
 package com.example.mixed_drems_mobile.presentation.pages.product
 
-import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,26 +19,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.ButtonElevation
-import androidx.compose.material.ContentAlpha
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
-import androidx.compose.material.LocalContentAlpha
 import androidx.compose.material.Surface
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -57,18 +50,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.SubcomposeAsyncImage
 import com.example.mixed_drems_mobile.R
 import com.example.mixed_drems_mobile.api.products.getProductDetails.GetProductDetailsResponse
 import com.example.mixed_drems_mobile.api.products.getProductDetails.IngredientDto
 import com.example.mixed_drems_mobile.api.products.getProductDetails.ProductCompanyDto
+import com.example.mixed_drems_mobile.api.products.getProductDetails.toCartItem
 import com.example.mixed_drems_mobile.enums.MeasureUnit
 import com.example.mixed_drems_mobile.enums.getShortWithNumber
 import com.example.mixed_drems_mobile.presentation.elements.BaseDivider
 import com.example.mixed_drems_mobile.presentation.elements.ExpandableText
 import com.example.mixed_drems_mobile.presentation.elements.PulseLoading
+import com.example.mixed_drems_mobile.presentation.elements.QuantitySelector
+import com.example.mixed_drems_mobile.utils.MainApplication
 
 private val HzPadding = Modifier.padding(horizontal = 24.dp)
 private val BottomBarHeight = 56.dp
@@ -148,42 +143,51 @@ fun ProductDetailsPage(
                         fontWeight = FontWeight.Bold,
                     )
                     ExpandableText(
-                        text = state.product.description,
+                        text =
+                        if (state.product.description != "")
+                            state.product.description
+                        else
+                            "You should try it!",
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.DarkGray,
                         collapsedMaxLine = 6,
                         modifier = Modifier.padding(bottom = 12.dp)
                     )
-                    Text(
-                        text = "Ingredients",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(bottom = 12.dp)
-                    )
-                    state.product.ingredients.forEach { ingredient ->
-                        Row(
-                            Modifier.padding(4.dp),
-                            verticalAlignment = CenterVertically
-                        ) {
-                            Text(text = "• ")
-                            Text(
-                                text = ingredient.name,
-                                color = MaterialTheme.colorScheme.primary,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold,
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            if (ingredient.hasAmount) {
+                    if (state.product.ingredients.isNotEmpty()) {
+                        Text(
+                            text = "Ingredients",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 12.dp)
+                        )
+                        state.product.ingredients.forEach { ingredient ->
+                            Row(
+                                Modifier.padding(4.dp),
+                                verticalAlignment = CenterVertically
+                            ) {
+                                Text(text = "• ")
                                 Text(
-                                    text = ingredient.unit!!.getShortWithNumber(ingredient.amount!!),
+                                    text = ingredient.name,
+                                    color = MaterialTheme.colorScheme.primary,
                                     style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.SemiBold,
                                 )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                if (ingredient.hasAmount) {
+                                    Text(
+                                        text = ingredient.unit!!.getShortWithNumber(ingredient.amount!!),
+                                        style = MaterialTheme.typography.titleMedium,
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
-            CartBottomBar(modifier = Modifier.align(Alignment.BottomCenter))
+            CartBottomBar(
+                product = state.product,
+                modifier = Modifier.align(Alignment.BottomCenter)
+            )
         }
         Row(
             verticalAlignment = CenterVertically,
@@ -347,7 +351,7 @@ fun BoxPreview() {
                 }
             }
         }
-        CartBottomBar(modifier = Modifier.align(Alignment.BottomCenter))
+        CartBottomBar(product = product, modifier = Modifier.align(Alignment.BottomCenter))
     }
     Row(
         verticalAlignment = CenterVertically,
@@ -378,7 +382,7 @@ fun BoxPreview() {
 }
 
 @Composable
-private fun CartBottomBar(modifier: Modifier = Modifier) {
+private fun CartBottomBar(product: GetProductDetailsResponse, modifier: Modifier = Modifier) {
     val (count, updateCount) = remember { mutableStateOf(1) }
     Surface(modifier) {
         Column {
@@ -399,7 +403,9 @@ private fun CartBottomBar(modifier: Modifier = Modifier) {
                 )
                 Spacer(Modifier.width(16.dp))
                 Button(
-                    onClick = { /* todo */ },
+                    onClick = {
+                        MainApplication.instance.shoppingCart.addItem(product.toCartItem(count))
+                    },
                     colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colorScheme.secondary)
                 ) {
                     Text(
@@ -414,44 +420,6 @@ private fun CartBottomBar(modifier: Modifier = Modifier) {
     }
 }
 
-@Composable
-fun QuantitySelector(
-    count: Int,
-    decreaseItemCount: () -> Unit,
-    increaseItemCount: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Row(modifier = modifier) {
-        CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.medium) {
-        }
-        BaseIconButton(
-            imageVector = Icons.Default.Remove,
-            onClick = decreaseItemCount,
-            contentDescription = "Remove one product from cart",
-            modifier = Modifier.align(CenterVertically)
-        )
-        Crossfade(
-            targetState = count,
-            modifier = Modifier
-                .align(CenterVertically)
-        ) {
-            Text(
-                text = "$it",
-                style = androidx.compose.material.MaterialTheme.typography.subtitle2,
-                fontSize = 18.sp,
-                color = MaterialTheme.colorScheme.primary,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.widthIn(min = 24.dp)
-            )
-        }
-        BaseIconButton(
-            imageVector = Icons.Default.Add,
-            onClick = increaseItemCount,
-            contentDescription = "Add one product to cart",
-            modifier = Modifier.align(CenterVertically)
-        )
-    }
-}
 
 @Composable
 fun BaseIconButton(

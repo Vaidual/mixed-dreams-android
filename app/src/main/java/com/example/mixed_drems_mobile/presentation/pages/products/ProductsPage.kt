@@ -80,9 +80,11 @@ import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
 import coil.compose.AsyncImage
 import com.example.mixed_drems_mobile.api.products.Product
+import com.example.mixed_drems_mobile.api.products.toCartItem
 import com.example.mixed_drems_mobile.constants.ProductSort
 import com.example.mixed_drems_mobile.navigation.Routes
 import com.example.mixed_drems_mobile.presentation.theme.MixeddremsmobileTheme
+import com.example.mixed_drems_mobile.utils.MainApplication
 import kotlinx.coroutines.launch
 
 @OptIn(
@@ -397,17 +399,13 @@ fun ProductCard(product: Product, navController: NavHostController) {
                 }
                 OutlinedButton(
                     modifier = Modifier.defaultMinSize(minHeight = 32.dp),
-                    onClick = { onAddToCartClicked(product.id) },
+                    onClick = { MainApplication.instance.shoppingCart.addItem(product.toCartItem(1)) },
                 ) {
                     Text(text = "Buy")
                 }
             }
         }
     }
-}
-
-fun onAddToCartClicked(id: String) {
-
 }
 
 //@Preview(showBackground = true)

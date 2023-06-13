@@ -11,4 +11,5 @@ sealed class Routes(val route: String) {
     }
     object Orders : Routes(route = "orders")
     object Account : Routes(route = "account")
+    object ShoppingCart : Routes(route = "shoppingCart")
 }

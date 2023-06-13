@@ -4,6 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.ListAlt
 import androidx.compose.material.icons.filled.ManageAccounts
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.example.mixed_drems_mobile.navigation.Routes
 
@@ -16,6 +17,12 @@ sealed class BottomBarOption(
         route = Routes.Products.route,
         title = "Home",
         icon = Icons.Default.Home
+    )
+
+    object ShoppingCart: BottomBarOption(
+        route = Routes.ShoppingCart.route,
+        title = "Cart",
+        icon = Icons.Default.ShoppingCart
     )
 
     object Orders: BottomBarOption(

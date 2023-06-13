@@ -32,10 +32,12 @@ import com.example.mixed_drems_mobile.presentation.pages.auth.signup.Signup
 import com.example.mixed_drems_mobile.presentation.pages.orders.OrdersPage
 import com.example.mixed_drems_mobile.presentation.pages.product.ProductDetailsPage
 import com.example.mixed_drems_mobile.presentation.pages.products.ProductsPage
+import com.example.mixed_drems_mobile.presentation.pages.shoppingCart.ShoppingCartPage
 import com.example.mixed_drems_mobile.utils.SharedPreferencesHelper
 
 val bottomNavScreens = listOf(
     BottomBarOption.Home,
+    BottomBarOption.ShoppingCart,
     BottomBarOption.Orders,
     BottomBarOption.Account,
 )
@@ -94,6 +96,9 @@ fun Navigator(activity: ComponentActivity, navController: NavHostController) {
         }
         composable(route = Routes.Account.route) {
             AccountPage(navController = navController)
+        }
+        composable(route = Routes.ShoppingCart.route) {
+            ShoppingCartPage(goToProduct = {id -> navController.navigate(Routes.Product.createRoute(id))})
         }
         composable(route = Routes.Product.route) {
             ProductDetailsPage(
