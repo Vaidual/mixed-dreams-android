@@ -45,7 +45,7 @@ val bottomNavScreens = listOf(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun MainPage(
-    activity: ComponentActivity
+    activity: ComponentActivity,
 ) {
     val navController = rememberNavController()
 

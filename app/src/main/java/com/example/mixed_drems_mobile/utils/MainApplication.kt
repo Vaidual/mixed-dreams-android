@@ -8,6 +8,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.example.mixed_drems_mobile.models.CartItem
+import com.stripe.android.PaymentConfiguration
 import dagger.hilt.android.HiltAndroidApp
 
 @HiltAndroidApp

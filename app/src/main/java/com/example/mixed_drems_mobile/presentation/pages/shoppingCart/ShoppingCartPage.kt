@@ -1,5 +1,6 @@
 package com.example.mixed_drems_mobile.presentation.pages.shoppingCart
 
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,17 +19,19 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -46,6 +49,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.mixed_drems_mobile.R
 import com.example.mixed_drems_mobile.models.CartItem
@@ -53,16 +57,44 @@ import com.example.mixed_drems_mobile.presentation.elements.BaseDivider
 import com.example.mixed_drems_mobile.presentation.elements.QuantitySelector
 import com.example.mixed_drems_mobile.utils.MainApplication
 import com.example.mixed_drems_mobile.utils.formatPrice
+import com.stripe.android.paymentsheet.PaymentSheet
+import com.stripe.android.paymentsheet.PaymentSheetContract
+import com.stripe.android.paymentsheet.addresselement.AddressDetails
 
 @Composable
 fun ShoppingCartPage(
-    goToProduct: (id: String) -> Unit
+    goToProduct: (id: String) -> Unit,
+    viewModel: StripeIntentViewModel = hiltViewModel()
 ) {
+    val stripeLauncher = rememberLauncherForActivityResult(contract = PaymentSheetContract()) {
+        viewModel.handlePaymentResult(it)
+    }
+
+    val clientSecret by viewModel.state.collectAsState()
+    clientSecret.data?.clientSecret?.let {
+        stripeLauncher.launch(
+            PaymentSheetContract.Args.createPaymentIntentArgs(
+                it,
+                config = PaymentSheet.Configuration(
+                    merchantDisplayName = "Mixed Dreams",
+                    shippingDetails = AddressDetails(
+                        address = PaymentSheet.Address(
+                            country = "UA"
+                        )
+                    )
+                )
+
+            )
+        )
+        viewModel.onPaymentLaunched()
+    }
+
     data class RemoveItemState(
         var isOpen: Boolean = false,
         val itemId: String = "",
         val itemName: String = ""
     )
+
     val removeItemDialogState = remember { mutableStateOf(RemoveItemState()) }
 
     Box(
@@ -88,7 +120,9 @@ fun ShoppingCartPage(
                             )
                         },
                         goToProduct = { id -> goToProduct(id) },
-                        showRemoveItemDialog = { id, name -> removeItemDialogState.value = RemoveItemState(true, id, name) },
+                        showRemoveItemDialog = { id, name ->
+                            removeItemDialogState.value = RemoveItemState(true, id, name)
+                        },
                     )
                 }
                 BaseDivider(
@@ -96,7 +130,7 @@ fun ShoppingCartPage(
                 )
                 SummaryItem(subtotal = MainApplication.instance.shoppingCart.cartItems.sumOf { it.price * it.count })
             }
-            CheckoutBar(modifier = Modifier.align(Alignment.BottomCenter))
+            CheckoutBar(modifier = Modifier.align(Alignment.BottomCenter), onCheckout = { viewModel.createPaymentIntent(amount = (MainApplication.instance.shoppingCart.cartItems.sumOf { it.price * it.count } * 100).toLong())})
         } else {
             Image(
                 painter = painterResource(id = R.drawable.empty_cart),
@@ -159,7 +193,9 @@ fun CartItemWidget(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
-            modifier = Modifier.clickable { goToProduct(item.id) }.padding(end = 12.dp),
+            modifier = Modifier
+                .clickable { goToProduct(item.id) }
+                .padding(end = 12.dp),
         ) {
             AsyncImage(
                 model = item.image,
@@ -224,55 +260,11 @@ fun CartItemWidget(
 }
 
 @Composable
-@Preview
-fun ShoppingCartPreview() {
-    val cartItems =
-        listOf(
-            CartItem("", "Закуска", "", 12.2, 5),
-            CartItem("", "Закуска", "", 12.2, 5)
-        )
-    Box(
-        Modifier
-            .fillMaxSize()
-            .background(Color.White)
-            .padding(horizontal = 12.dp)
-            .padding(top = 12.dp),
-    ) {
-        if(true) {
-            Column {
-                cartItems.map { cartItem ->
-                    CartItemWidget(
-                        item = cartItem,
-                        decreaseItemCount = { id ->
-                            MainApplication.instance.shoppingCart.decrementItem(
-                                id
-                            )
-                        },
-                        increaseItemCount = { id ->
-                            MainApplication.instance.shoppingCart.incrementItem(
-                                id
-                            )
-                        },
-                        goToProduct = { },
-                        showRemoveItemDialog = { _, _ -> },
-                    )
-                }
-                SummaryItem(subtotal = cartItems.sumOf { it.price * it.count })
-            }
-            CheckoutBar(modifier = Modifier.align(Alignment.BottomCenter))
-        } else {
-            Image(
-                painter = painterResource(id = R.drawable.empty_cart),
-                contentDescription = "Empty cart image",
-                modifier = Modifier
-                    .align(Alignment.Center).fillMaxSize()
-            )
-        }
-    }
-}
+fun CheckoutBar(
+    onCheckout: () -> Unit,
+    modifier: Modifier = Modifier
+) {
 
-@Composable
-private fun CheckoutBar(modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
     ) {
@@ -280,7 +272,7 @@ private fun CheckoutBar(modifier: Modifier = Modifier) {
         Row {
             Spacer(Modifier.weight(1f))
             Button(
-                onClick = { /* todo */ },
+                onClick = { onCheckout() },
                 shape = RoundedCornerShape(4.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 modifier = Modifier
@@ -297,6 +289,9 @@ private fun CheckoutBar(modifier: Modifier = Modifier) {
         }
     }
 }
+
+
+
 
 @Composable
 fun SummaryItem(
@@ -350,5 +345,54 @@ fun SummaryItem(
             )
         }
         BaseDivider()
+    }
+}
+
+@Composable
+@Preview
+fun ShoppingCartPreview() {
+    val cartItems =
+        listOf(
+            CartItem("", "Закуска", "", 12.2, 5),
+            CartItem("", "Закуска", "", 12.2, 5)
+        )
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(Color.White)
+            .padding(horizontal = 12.dp)
+            .padding(top = 12.dp),
+    ) {
+        if (true) {
+            Column {
+                cartItems.map { cartItem ->
+                    CartItemWidget(
+                        item = cartItem,
+                        decreaseItemCount = { id ->
+                            MainApplication.instance.shoppingCart.decrementItem(
+                                id
+                            )
+                        },
+                        increaseItemCount = { id ->
+                            MainApplication.instance.shoppingCart.incrementItem(
+                                id
+                            )
+                        },
+                        goToProduct = { },
+                        showRemoveItemDialog = { _, _ -> },
+                    )
+                }
+                SummaryItem(subtotal = cartItems.sumOf { it.price * it.count })
+            }
+            CheckoutBar(modifier = Modifier.align(Alignment.BottomCenter), onCheckout = {})
+        } else {
+            Image(
+                painter = painterResource(id = R.drawable.empty_cart),
+                contentDescription = "Empty cart image",
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .fillMaxSize()
+            )
+        }
     }
 }

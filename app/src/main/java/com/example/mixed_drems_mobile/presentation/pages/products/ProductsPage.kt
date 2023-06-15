@@ -28,11 +28,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.rounded.Done
 import androidx.compose.material.icons.rounded.Sort
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -50,6 +54,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -88,7 +93,7 @@ import com.example.mixed_drems_mobile.utils.MainApplication
 import kotlinx.coroutines.launch
 
 @OptIn(
-    ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class
+    ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalMaterialApi::class
 )
 @Composable
 fun ProductsPage(navController: NavHostController, vm: ProductsViewModel = hiltViewModel()) {
@@ -131,6 +136,13 @@ fun ProductsPage(navController: NavHostController, vm: ProductsViewModel = hiltV
     fun updateSearchKey(key: String) {
         vm.updateFilter(vm.getFilter().copy(key = key))
     }
+
+    val refreshState = rememberPullRefreshState(
+        refreshing = products.loadState.refresh is LoadState.Loading,
+        onRefresh = {
+            products.refresh()
+        }
+    )
 
     Scaffold(
         topBar = {
@@ -227,46 +239,59 @@ fun ProductsPage(navController: NavHostController, vm: ProductsViewModel = hiltV
                         }
                     }
                 }
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 16.dp),
-                    horizontalAlignment = CenterHorizontally,
+                Box(
+                    Modifier.pullRefresh(refreshState)
                 ) {
-                    if (products.loadState.refresh == LoadState.Loading) {
-                        item {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Center
-                            ) {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp),
+                        horizontalAlignment = CenterHorizontally,
+                    ) {
+                        if (products.loadState.refresh != LoadState.Loading) {
+                            items(
+                                count = products.itemCount,
+                                key = products.itemKey(),
+                                contentType = products.itemContentType(
+                                )
+                            ) { index ->
+                                val item = products[index]
+                                if (item != null) {
+                                    ProductCard(item, navController)
+                                }
+                                Spacer(modifier = Modifier.height(16.dp))
+                            }
+                        }
+//                        else {
+//                            items(
+//                                count = products.itemCount,
+//                                key = products.itemKey(),
+//                                contentType = products.itemContentType(
+//                                )
+//                            ) { index ->
+//                                val item = products[index]
+//                                if (item != null) {
+//                                    ProductCard(item, navController)
+//                                }
+//                                Spacer(modifier = Modifier.height(16.dp))
+//                            }
+//                        }
+
+                        if (products.loadState.append == LoadState.Loading) {
+                            item {
                                 CircularProgressIndicator(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .wrapContentWidth(CenterHorizontally)
                                 )
                             }
                         }
-                    } else {
-                        items(
-                            count = products.itemCount,
-                            key = products.itemKey(),
-                            contentType = products.itemContentType(
-                            )
-                        ) { index ->
-                            val item = products[index]
-                            if (item != null) {
-                                ProductCard(item, navController)
-                            }
-                            Spacer(modifier = Modifier.height(16.dp))
-                        }
                     }
-
-                    if (products.loadState.append == LoadState.Loading) {
-                        item {
-                            CircularProgressIndicator(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .wrapContentWidth(CenterHorizontally)
-                            )
-                        }
-                    }
+                    PullRefreshIndicator(
+                        products.loadState.refresh is LoadState.Loading,
+                        refreshState,
+                        Modifier.align(Alignment.TopCenter)
+                    )
                 }
                 if (openSortSheet) {
                     ModalBottomSheet(
@@ -353,7 +378,7 @@ fun ProductCard(product: Product, navController: NavHostController) {
         modifier = Modifier
             .widthIn(0.dp, 300.dp)
             .height(210.dp)
-            .clickable{
+            .clickable {
                 navController.navigate(Routes.Product.createRoute(product.id))
             },
         elevation = CardDefaults.cardElevation(2.dp)
