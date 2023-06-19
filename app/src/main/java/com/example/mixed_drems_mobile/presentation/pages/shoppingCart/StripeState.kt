@@ -8,5 +8,6 @@ import com.example.mixed_drems_mobile.presentation.common.BaseState
 data class StripeState(
     override val isLoading: Boolean = false,
     val intent: IntentResponse? = null,
+    val successOrder: Boolean = false,
     override val error: ErrorResponse? = null
 ) : BaseState<IntentResponse>(isLoading, intent, error)

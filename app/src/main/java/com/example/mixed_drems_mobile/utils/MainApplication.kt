@@ -58,4 +58,8 @@ class ShoppingCart() {
     fun removeItem(id: String) {
         _cartItems.remove(_cartItems.find { it.id == id })
     }
+
+    fun clear() {
+        _cartItems.clear()
+    }
 }

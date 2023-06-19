@@ -13,7 +13,8 @@ data class GetProductDetailsResponse(
     val primaryImage: String?,
     val category: String,
     val company: ProductCompanyDto,
-    val ingredients: List<IngredientDto>
+    val ingredients: List<IngredientDto>,
+    val preparationTime: Int,
 )
 
 fun GetProductDetailsResponse.toCartItem(count: Int = 1): CartItem {

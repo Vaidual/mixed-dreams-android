@@ -5,7 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.example.mixed_drems_mobile.api.orders.IOrdersRepository
 import com.example.mixed_drems_mobile.api.orders.create_intent.IntentRequest
 import com.example.mixed_drems_mobile.api.orders.create_intent.IntentResponse
+import com.example.mixed_drems_mobile.api.orders.post_order.PostOrderProductDto
+import com.example.mixed_drems_mobile.api.orders.post_order.PostOrderRequest
 import com.example.mixed_drems_mobile.presentation.common.Resource
+import com.example.mixed_drems_mobile.utils.MainApplication
 import com.stripe.android.paymentsheet.PaymentSheetResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
@@ -21,7 +24,7 @@ class StripeIntentViewModel @Inject constructor(
     private val orderRepo: IOrdersRepository
 ) : ViewModel() {
     private val _state = MutableStateFlow(StripeState())
-    val state= _state.asStateFlow()
+    val state = _state.asStateFlow()
 
     fun createPaymentIntent(amount: Long) {
 
@@ -39,9 +42,11 @@ class StripeIntentViewModel @Inject constructor(
                 is Resource.Success -> {
                     _state.value = StripeState(intent = result.data)
                 }
+
                 is Resource.Error -> {
                     _state.value = StripeState(error = result.error)
                 }
+
                 is Resource.Loading -> {
                     _state.value = StripeState(isLoading = true)
                 }
@@ -50,20 +55,42 @@ class StripeIntentViewModel @Inject constructor(
     }
 
     fun handlePaymentResult(result: PaymentSheetResult) {
-        when(result) {
+        when (result) {
             PaymentSheetResult.Canceled -> {
                 println("Canceled")
             }
+
             PaymentSheetResult.Completed -> {
+                creteOrder(
+                    PostOrderRequest(
+                        businessLocationId = "",
+                        products = MainApplication.instance.shoppingCart.cartItems.map {
+                            PostOrderProductDto(productId = it.id, amount = it.count)
+                        })
+                )
                 println("Completed")
             }
-            is  PaymentSheetResult.Failed -> {
+
+            is PaymentSheetResult.Failed -> {
                 println("Failed")
             }
         }
     }
 
+    fun creteOrder(order: PostOrderRequest) {
+//        val orderFlow: Flow<Resource<Unit>> =flow {
+//            emit(Resource.Loading())
+//            val response = orderRepo.createOrder(order)
+//        }
+        MainApplication.instance.shoppingCart.clear()
+        _state.value = _state.value.copy(successOrder = true)
+    }
+
     fun onPaymentLaunched() {
+        _state.value = StripeState()
+    }
+
+    fun onSuccessEnd() {
         _state.value = StripeState()
     }
 }

@@ -121,19 +121,36 @@ fun ProductDetailsPage(
                 Column(
                     Modifier.padding(horizontal = 12.dp)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(20.dp)),
-                    ) {
-                        Text(
-                            state.product.category,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Medium,
+                    Row {
+                        Box(
                             modifier = Modifier
-                                .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f))
-                                .padding(vertical = 4.dp, horizontal = 18.dp),
+                                .clip(RoundedCornerShape(20.dp)),
+                        ) {
+                            Text(
+                                state.product.category,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier
+                                    .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f))
+                                    .padding(vertical = 4.dp, horizontal = 18.dp),
 
-                            )
+                                )
+                        }
+                        Box(
+                            modifier = Modifier
+                                .padding(start = 12.dp)
+                                .clip(RoundedCornerShape(20.dp)),
+                        ) {
+                            Text(
+                                text = "${state.product.preparationTime} min",
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier
+                                    .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f))
+                                    .padding(vertical = 4.dp, horizontal = 18.dp),
+
+                                )
+                        }
                     }
                     Text(
                         modifier = Modifier
@@ -258,7 +275,8 @@ fun BoxPreview() {
             IngredientDto("Apple", true, 12f, MeasureUnit.Milliliter),
             IngredientDto("wefewfw", true, 23.4f, MeasureUnit.Pint),
             IngredientDto("UHuwddwdwdwdwd", false, 12f, MeasureUnit.Milliliter)
-        )
+        ),
+        12
     )
 
     Box(
@@ -294,19 +312,36 @@ fun BoxPreview() {
             Column(
                 Modifier.padding(horizontal = 12.dp)
             ) {
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(20.dp)),
-                ) {
-                    Text(
-                        product.category,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Medium,
+                Row {
+                    Box(
                         modifier = Modifier
-                            .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f))
-                            .padding(vertical = 4.dp, horizontal = 18.dp),
+                            .clip(RoundedCornerShape(20.dp)),
+                    ) {
+                        Text(
+                            product.category,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier
+                                .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f))
+                                .padding(vertical = 4.dp, horizontal = 18.dp),
 
-                        )
+                            )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .padding(start = 12.dp)
+                            .clip(RoundedCornerShape(20.dp)),
+                    ) {
+                        Text(
+                            text = "${product.preparationTime} min",
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier
+                                .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f))
+                                .padding(vertical = 4.dp, horizontal = 18.dp),
+
+                            )
+                    }
                 }
                 Text(
                     modifier = Modifier
